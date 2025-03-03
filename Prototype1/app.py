@@ -12,8 +12,8 @@ mongo = PyMongo(app)
 db = mongo.db
 
 def is_admin():
-    # For simplicity, assume that the user with username "admin" is the admin.
     return 'user' in session and session['user']['username'] == 'admin'
+
 
 @app.route('/')
 def home():
@@ -120,31 +120,50 @@ def edit_lfg(id):
 def delete_lfg(id):
     if 'user' not in session:
         return redirect(url_for('login'))
+    
     lfg_post = db.lfg.find_one({'_id': ObjectId(id)})
     if not lfg_post:
         return render_template('error.html', error="Post not found.")
-    # Only allow the owner to delete their post
+
+    # Prevent users from deleting admin posts
+    if lfg_post['user_id'] == 'admin':
+        return render_template('error.html', error="You cannot delete an admin's post.")
+
+    # Only allow the owner to delete their own post
     if lfg_post['user_id'] != session['user']['id']:
         return render_template('error.html', error="You are not authorized to delete this post.")
+    
     db.lfg.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('home'))
+
 
 @app.route('/admin_reports')
 def admin_reports():
     if not is_admin():
         return redirect(url_for('login'))
-    # Retrieve all posts (or filter for reported posts) for admin review (admin_reports.html :contentReference[oaicite:10]{index=10})
-    posts = list(db.lfg.find())
+    
+    search_query = request.args.get('search', '')
+    if search_query:
+        posts = list(db.lfg.find({
+            'description': {'$regex': search_query, '$options': 'i'}
+        }))
+    else:
+        posts = list(db.lfg.find())
+
     for post in posts:
         post['_id_str'] = str(post['_id'])
+    
     return render_template('admin_reports.html', posts=posts)
+
 
 @app.route('/admin_delete_lfg/<id>', methods=['POST'])
 def admin_delete_lfg(id):
     if not is_admin():
         return redirect(url_for('login'))
+    
     db.lfg.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('admin_reports'))
+
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
@@ -165,6 +184,21 @@ def search():
             post['_id_str'] = str(post['_id'])
     # Note: You'll need to create a corresponding search.html template to display these results.
     return render_template('search.html', results=results, query=query)
+
+@app.route('/admin_login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        # Fixed admin credentials
+        if username == "admin" and password == "admin123":
+            session['user'] = {'id': 'admin', 'username': 'admin'}
+            return redirect(url_for('admin_reports'))
+        else:
+            flash('Invalid admin credentials')
+            return redirect(url_for('admin_login'))
+    return render_template('login.html', admin_login=True)
 
 # Custom error handlers to render error.html for common errors (error.html :contentReference[oaicite:11]{index=11})
 @app.errorhandler(404)
