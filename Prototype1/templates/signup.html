@@ -19,13 +19,15 @@
     {% if signup %}
       <h2>Sign Up</h2>
       <form action="{{ url_for('signup') }}" method="POST">
-          <label>Username:</label>
-          <input type="text" name="username" required>
-          <label>Password:</label>
-          <input type="password" name="password" required>
-          <label>Confirm Password:</label>
-          <input type="password" name="confirm_password" required>
-          <button type="submit">Sign Up</button>
+        <label>Username:</label>
+        <input type="text" name="username" required>
+        <label>Email:</label>
+        <input type="email" name="email" required>
+        <label>Password:</label>
+        <input type="password" name="password" required>
+        <label>Confirm Password:</label>
+        <input type="password" name="confirm_password" required>
+        <button type="submit">Sign Up</button>
       </form>
       <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
     {% else %}

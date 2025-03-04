@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
+from datetime import datetime, timezone
 import os
 
 app = Flask(__name__)
@@ -12,7 +13,8 @@ mongo = PyMongo(app)
 db = mongo.db
 
 def is_admin():
-    return 'user' in session and session['user']['username'] == 'admin'
+    return 'user' in session and session['user'].get('role') == 'admin'
+
 
 
 @app.route('/')
@@ -44,7 +46,12 @@ def login():
         user = db.users.find_one({'username': username})
         # In a real application, use hashed passwords.
         if user and user['password'] == password:
-            session['user'] = {'id': str(user['_id']), 'username': user['username']}
+            session['user'] = {
+                'id': str(user['_id']), 
+                'username': user['username'], 
+                'email': user.get('email', ''), 
+                'role': user.get('role', 'user')
+            }
             return redirect(url_for('home'))
         else:
             flash('Invalid username or password')
@@ -56,8 +63,10 @@ def login():
 def signup():
     if request.method == 'POST':
         username = request.form.get('username')
+        email = request.form.get('email')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
+
         if password != confirm_password:
             flash('Passwords do not match')
             return redirect(url_for('signup'))
@@ -65,8 +74,13 @@ def signup():
         if existing_user:
             flash('Username already exists')
             return redirect(url_for('signup'))
-        user_id = db.users.insert_one({'username': username, 'password': password}).inserted_id
-        session['user'] = {'id': str(user_id), 'username': username}
+        user_id = db.users.insert_one({
+            'username': username, 
+            'email': email,
+            'password': password,
+            'role': 'user'
+        }).inserted_id
+        session['user'] = {'id': str(user_id), 'username': username, 'email': email, 'role': 'user'}
         return redirect(url_for('home'))
     # Render the signup page (signup.html :contentReference[oaicite:6]{index=6})
     return render_template('signup.html', signup=True)
@@ -84,12 +98,17 @@ def create_lfg():
         game = request.form.get('game')
         description = request.form.get('description')
         level_required = request.form.get('level_required')
+        availability = request.form.get('availability')
+        region = request.form.get('region')
         # Add a new LFG post to the database (create_lfg.html :contentReference[oaicite:7]{index=7})
         db.lfg.insert_one({
             'game': game,
             'description': description,
             'level_required': level_required,
-            'user_id': session['user']['id']
+            'user_id': session['user']['id'],
+            'created_at': datetime.now(timezone.utc),
+            'contact': session['user'].get('email', ''),
+            'role': session['user']['role']  # the basement of access
         })
         return redirect(url_for('home'))
     return render_template('create_lfg.html')
@@ -101,16 +120,37 @@ def edit_lfg(id):
     lfg_post = db.lfg.find_one({'_id': ObjectId(id)})
     if not lfg_post:
         return render_template('error.html', error="Post not found.")  # (error.html :contentReference[oaicite:8]{index=8})
+    
     # Only allow the owner (or admin) to edit the post
-    if lfg_post['user_id'] != session['user']['id']:
+    if is_admin():
+        if request.method == 'POST':
+            description = request.form.get('description')
+            db.lfg.update_one(
+                {'_id': ObjectId(id)},
+                {'$set': {'description': description}}
+            )
+            return redirect(url_for('home'))
+    # Render the edit page (edit_lfg.html :contentReference[oaicite:9]{index=9})
+        return render_template('admin_edit_lfg.html', lfg=lfg_post)
+
+    if lfg_post['created_by'] != session['user']['id']:
         return render_template('error.html', error="You are not authorized to edit this post.")
+
     if request.method == 'POST':
         game = request.form.get('game')
         description = request.form.get('description')
         level_required = request.form.get('level_required')
+        availability = request.form.get('availability')
+        region = request.form.get('region')
         db.lfg.update_one(
             {'_id': ObjectId(id)},
-            {'$set': {'game': game, 'description': description, 'level_required': level_required}}
+            {'$set': {
+                'game_name': game,
+                'description': description,
+                'level': level_required,
+                'availability': availability,
+                'region': region
+            }}
         )
         return redirect(url_for('home'))
     # Render the edit page (edit_lfg.html :contentReference[oaicite:9]{index=9})
@@ -124,13 +164,13 @@ def delete_lfg(id):
     lfg_post = db.lfg.find_one({'_id': ObjectId(id)})
     if not lfg_post:
         return render_template('error.html', error="Post not found.")
-
-    # Prevent users from deleting admin posts
-    if lfg_post['user_id'] == 'admin':
-        return render_template('error.html', error="You cannot delete an admin's post.")
+    
+    if is_admin():
+        db.lfg.delete_one({'_id': ObjectId(id)})
+        return redirect(url_for('admin_reports'))
 
     # Only allow the owner to delete their own post
-    if lfg_post['user_id'] != session['user']['id']:
+    if lfg_post['created_by'] != session['user']['id']:
         return render_template('error.html', error="You are not authorized to delete this post.")
     
     db.lfg.delete_one({'_id': ObjectId(id)})
@@ -187,17 +227,21 @@ def admin_reports():
         post['_id_str'] = str(post['_id'])
     
     return render_template('admin_reports.html', posts=posts)
-@app.route('/admin_dashboard', methods=["Get"])
+
+@app.route('/admin_dashboard', methods=["GET"])
 def admin_dashboard():
     if not is_admin():
         return redirect(url_for('login'))
-    try: 
-        users=list(db.users.find({}))
-        posts=list(db.lfg.find({}).sort("created_at",-1))
-        return render_template("admin_dashboard.html",users=users, posts=posts)
+    try:
+        users = list(db.users.find({}))
+        posts = list(db.lfg.find({}).sort("created_at", -1))
+        return render_template("admin_dashboard.html", users=users, posts=posts)
     except Exception as e:
         logging.error(f"⚠️ Error fetching admin data: {e}", exc_info=True)
-        return render_template("error.html",error="Could not load admin data")
+        return render_template("error.html", error="Could not load admin data")
+
+
+
 @app.route('/admin_delete_lfg/<id>', methods=['POST'])
 def admin_delete_lfg(id):
     if not is_admin():
@@ -235,12 +279,17 @@ def admin_login():
 
         # Fixed admin credentials
         if username == "admin" and password == "admin123":
-            session['user'] = {'id': 'admin', 'username': 'admin'}
-            return redirect(url_for('admin_reports'))
+            session['user'] = {
+                'id': 'admin', 
+                'username': 'admin', 
+                'role': 'admin', 
+                'email': ''
+                }
+            return redirect(url_for('admin_dashboard'))
         else:
             flash('Invalid admin credentials')
             return redirect(url_for('admin_login'))
-    return render_template('login.html', admin_login=True)
+    return render_template('admin_login.html')
 
 # Custom error handlers to render error.html for common errors (error.html :contentReference[oaicite:11]{index=11})
 @app.errorhandler(404)

@@ -9,12 +9,22 @@
     <form action="{{ url_for('create_lfg') }}" method="POST">
         <label>Game:</label>
         <input type="text" name="game" required>
+        
         <label>Description:</label>
         <textarea name="description" required></textarea>
+    
         <label>Level Required:</label>
         <input type="text" name="level_required" required>
+    
+        <label>Availability (Time):</label>
+        <input type="text" name="availability" placeholder="E.g., Weekends" required>
+    
+        <label>Region (Location):</label>
+        <input type="text" name="region" placeholder="E.g., North America" required>
+    
         <button type="submit">Post</button>
     </form>
+    
     <a href="{{ url_for('home') }}">Back to Home</a>
 </body>
 </html>
