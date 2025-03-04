@@ -99,7 +99,6 @@ def create_lfg():
     
     # Prevent admin from creating posts
     if session['user']['username'].lower() == "admin":
-        flash("Admins are not allowed to create posts.")
         return redirect(url_for('home'))
     
     if request.method == 'POST':
