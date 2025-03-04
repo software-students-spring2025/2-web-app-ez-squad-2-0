@@ -135,6 +135,39 @@ def delete_lfg(id):
     
     db.lfg.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('home'))
+### Delete Confirmation
+
+@app.route('/delete_confirm/<id>')
+def delete_confirm(id):
+    """Show delete confirmation page."""
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    lfg_post = db.lfg.find_one({'_id': ObjectId(id)})
+    if not lfg_post:
+        flash("Post not found.")
+        return redirect(url_for('home'))
+    
+    # Convert ObjectId to string for template usage
+    lfg_post['_id_str'] = str(lfg_post['_id'])
+
+    return render_template('delete_confirm.html', post=lfg_post)
+
+
+@app.route('/confirm_delete_lfg/<id>', methods=['POST'])
+def confirm_delete_lfg(id):
+    """Perform actual delete after confirmation."""
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    lfg_post = db.lfg.find_one({'_id': ObjectId(id)})
+    if not lfg_post:
+        flash("Post not found.")
+        return redirect(url_for('home'))
+
+    db.lfg.delete_one({'_id': ObjectId(id)})
+    flash("Post deleted successfully.")
+    return redirect(url_for('home'))
 
 
 @app.route('/admin_reports')

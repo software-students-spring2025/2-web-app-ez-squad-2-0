@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete LFG Post | LFG App</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>Confirm Delete</h2>
+        <p>Are you sure you want to delete the post for <strong>{{ post.game }}</strong>?</p>
+        <p>Description: {{ post.description }}</p>
+        <p>Level Required: {{ post.level_required }}</p>
+
+        <!-- Form to confirm delete -->
+        <form action="{{ url_for('confirm_delete_lfg', id=post._id_str) }}" method="POST">
+            <button type="submit" class="delete-btn">Yes, Delete</button>
+            <a href="{{ url_for('home') }}" class="cancel-btn">Cancel</a>
+        </form>
+    </div>
+</body>
+</html>
