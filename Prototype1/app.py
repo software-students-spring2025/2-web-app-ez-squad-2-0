@@ -105,7 +105,7 @@ def create_lfg():
             'game': game,
             'description': description,
             'level_required': level_required,
-            'user_id': session['user']['id'],
+            'created_by': session['user']['id'],
             'created_at': datetime.now(timezone.utc),
             'contact': session['user'].get('email', ''),
             'role': session['user']['role']  # the basement of access
@@ -120,20 +120,11 @@ def edit_lfg(id):
     lfg_post = db.lfg.find_one({'_id': ObjectId(id)})
     if not lfg_post:
         return render_template('error.html', error="Post not found.")  # (error.html :contentReference[oaicite:8]{index=8})
-    
-    # Only allow the owner (or admin) to edit the post
-    if is_admin():
-        if request.method == 'POST':
-            description = request.form.get('description')
-            db.lfg.update_one(
-                {'_id': ObjectId(id)},
-                {'$set': {'description': description}}
-            )
-            return redirect(url_for('home'))
-    # Render the edit page (edit_lfg.html :contentReference[oaicite:9]{index=9})
-        return render_template('admin_edit_lfg.html', lfg=lfg_post)
 
-    if lfg_post['created_by'] != session['user']['id']:
+    # Only allow the owner to edit the post
+    post_owner = lfg_post.get('created_by') or lfg_post.get('user_id')
+
+    if not is_admin() and post_owner != session['user']['id']:
         return render_template('error.html', error="You are not authorized to edit this post.")
 
     if request.method == 'POST':
@@ -145,16 +136,18 @@ def edit_lfg(id):
         db.lfg.update_one(
             {'_id': ObjectId(id)},
             {'$set': {
-                'game_name': game,
+                'game': game,
                 'description': description,
-                'level': level_required,
+                'level_required': level_required,
                 'availability': availability,
                 'region': region
             }}
         )
         return redirect(url_for('home'))
+
     # Render the edit page (edit_lfg.html :contentReference[oaicite:9]{index=9})
-    return render_template('edit_lfg.html', lfg=lfg_post)
+    return render_template('admin_edit_lfg.html' if is_admin() else 'edit_lfg.html', lfg=lfg_post)
+
 
 @app.route('/delete_lfg/<id>', methods=['POST'])
 def delete_lfg(id):
@@ -164,17 +157,19 @@ def delete_lfg(id):
     lfg_post = db.lfg.find_one({'_id': ObjectId(id)})
     if not lfg_post:
         return render_template('error.html', error="Post not found.")
-    
+
+    post_owner = lfg_post.get('created_by') or lfg_post.get('user_id')
     if is_admin():
         db.lfg.delete_one({'_id': ObjectId(id)})
         return redirect(url_for('admin_reports'))
 
     # Only allow the owner to delete their own post
-    if lfg_post['created_by'] != session['user']['id']:
+    if not is_admin() and post_owner != session['user']['id']:
         return render_template('error.html', error="You are not authorized to delete this post.")
-    
+
     db.lfg.delete_one({'_id': ObjectId(id)})
-    return redirect(url_for('home'))
+
+    return redirect(url_for('home') if not is_admin() else url_for('admin_reports'))
 ### Delete Confirmation
 
 @app.route('/delete_confirm/<id>')
