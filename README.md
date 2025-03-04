@@ -43,7 +43,6 @@ The **LFG App** helps gamers find teammates quickly by posting and searching for
 
 
 ### As a User:
-- I want to edit my profile including username, profile pic, pinned postings.
 - I want to have a log in so that I can manage my posts securely.
 
 
