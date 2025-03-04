@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search for LFG Posts | LFG App</title>
+    <!-- Link to your updated CSS -->
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Page Title -->
+        <h2>Search for LFG Posts</h2>
+        
+        <!-- Search Section -->
+        <div class="search-container">
+            <label for="query" class="search-label">Search by Game or Description:</label>
+            <form action="{{ url_for('search') }}" method="POST" class="search-form">
+                <input type="text" name="query" id="query" placeholder="Search here..." value="{{ query }}" required>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        <!-- Navigation -->
+        <a href="{{ url_for('home') }}" class="back-home">Back to Home</a>
+
+        <hr>
+
+        <!-- Results Section -->
+        <h3>Search Results:</h3>
+        {% if results %}
+            {% for post in results %}
+                <div class="result-card">
+                    <h4>{{ post.game }}</h4>
+                    <p><strong>Description:</strong> {{ post.description }}</p>
+                    <p><strong>Level Required:</strong> {{ post.level_required }}</p>
+
+                    <div class="lfg-buttons">
+                        <a href="{{ url_for('edit_lfg', id=post._id_str) }}" class="edit-btn">Edit</a>
+                        <a href="{{ url_for('delete_confirm', id=post._id_str) }}" class="delete-btn">Delete</a>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-results">No matching results found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

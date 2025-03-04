@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if signup %}Sign Up{% else %}Login{% endif %} | LFG App</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  <ul class="flashes">
+      {% for message in messages %}
+      <li style="color: red;">{{ message }}</li>
+      {% endfor %}
+  </ul>
+  {% endif %}
+  {% endwith %}
+
+  <h2>Sign Up</h2>
+  <form action="{{ url_for('signup') }}" method="POST">
+      <label>Username:</label>
+      <input type="text" name="username" required>
+      <label>Email:</label>
+      <input type="email" name="email" required>
+      <label>Password:</label>
+      <input type="password" name="password" required>
+      <label>Confirm Password:</label>
+      <input type="password" name="confirm_password" required>
+      <button type="submit">Sign Up</button>
+  </form>
+</body>
+
+</html>
