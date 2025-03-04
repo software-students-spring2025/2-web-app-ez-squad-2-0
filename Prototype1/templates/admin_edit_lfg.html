@@ -10,17 +10,17 @@
     <h2>Edit Post (Admin)</h2>
     <form action="{{ url_for('edit_lfg', id=lfg._id) }}" method="POST">
         <label>Game:</label>
-        <input type="text" value="{{ lfg.game_name }}" disabled>
-
+        <input type="text" value="{{ lfg.game }}" disabled>
+        
         <label>Level Required:</label>
-        <input type="text" value="{{ lfg.level }}" disabled>
-
+        <input type="text" value="{{ lfg.level_required }}" disabled>
+        
         <label>Availability (Time):</label>
         <input type="text" value="{{ lfg.availability }}" disabled>
-
+        
         <label>Region (Location):</label>
         <input type="text" value="{{ lfg.region }}" disabled>
-
+        
         <label>Description:</label>
         <textarea name="description" required>{{ lfg.description }}</textarea>
 
