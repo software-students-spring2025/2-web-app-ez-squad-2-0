@@ -64,7 +64,7 @@ Make sure **[Docker](https://www.docker.com/)** is installed on your machine.
 1. **Clone this repository:**
 ```bash
 git clone https://github.com/software-students-spring2025/2-web-app-ez-squad-2-0
-cd 2-web-app-ez-squad-2-0/Prototype1
+cd 2-web-app-ez-squad-2-0/lfg_app
 ```
 2. **Generate a .env file:**
 ```bash
