@@ -204,6 +204,24 @@ def confirm_delete_lfg(id):
     flash("Post deleted successfully.")
     return redirect(url_for('home'))
 
+#Detail posting
+@app.route('/post/<id>')
+def post_detail(id):
+    """Display detailed view of a single LFG post."""
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    lfg_post = db.lfg.find_one({'_id': ObjectId(id)})
+    if not lfg_post:
+        return render_template('error.html', error="Post not found.")
+
+    # Fetch the username of the post creator
+    user = db.users.find_one({'_id': ObjectId(lfg_post.get('created_by'))})
+
+    return render_template('post_detail.html', post=lfg_post, posted_by=user['username'] if user else "Unknown")
+
+
+
 
 @app.route('/admin_reports')
 def admin_reports():
