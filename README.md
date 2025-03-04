@@ -66,10 +66,13 @@ Make sure **[Docker](https://www.docker.com/)** is installed on your machine.
 git clone https://github.com/software-students-spring2025/2-web-app-ez-squad-2-0
 cd 2-web-app-ez-squad-2-0/Prototype1
 ```
+
+
 2. **Generate a .env file:**
 ```bash
-touch .env
+cp env.example .env
 ```
+Edit the .env file and replace dummy data with the actual credentials shared in the team messenger.
 
 
 3. **Launch the application using Docker Compose:**
