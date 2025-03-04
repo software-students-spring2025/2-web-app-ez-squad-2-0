@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>{% if signup %}Sign Up{% else %}Login{% endif %} | LFG App</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     {% with messages = get_flashed_messages() %}
