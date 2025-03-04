@@ -43,7 +43,6 @@ The **LFG App** helps gamers find teammates quickly by posting and searching for
 
 
 ### As a User:
-- I want to edit my profile including username, profile pic, pinned postings.
 - I want to have a log in so that I can manage my posts securely.
 
 
@@ -69,9 +68,9 @@ cd 2-web-app-ez-squad-2-0/Prototype1
 ```
 2. **Generate a .env file:**
 ```bash
-touch .env
+cp env.example .env
 ```
-
+Edit the .env file and replace dummy data with the actual credentials shared in the team messenger.
 
 3. **Launch the application using Docker Compose:**
 ```bash
