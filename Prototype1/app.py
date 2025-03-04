@@ -187,8 +187,17 @@ def admin_reports():
         post['_id_str'] = str(post['_id'])
     
     return render_template('admin_reports.html', posts=posts)
-
-
+@app.route('/admin_dashboard', methods=["Get"])
+def admin_dashboard():
+    if not is_admin():
+        return redirect(url_for('login'))
+    try: 
+        users=list(db.users.find({}))
+        posts=list(db.lfg.find({}).sort("created_at",-1))
+        return render_template("admin_dashboard.html",users=users, posts=posts)
+    except Exception as e:
+        logging.error(f"⚠️ Error fetching admin data: {e}", exc_info=True)
+        return render_template("error.html",error="Could not load admin data")
 @app.route('/admin_delete_lfg/<id>', methods=['POST'])
 def admin_delete_lfg(id):
     if not is_admin():
