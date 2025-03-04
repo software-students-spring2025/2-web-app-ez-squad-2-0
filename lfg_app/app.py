@@ -96,6 +96,11 @@ def create_lfg():
     if 'user' not in session:
         flash("You must be logged in to create a post.")
         return redirect(url_for('login'))
+    
+     # Prevent admin from creating posts
+    if session['user']['username'].lower() == "admin":
+        flash("Admins are not allowed to create posts.")
+        return redirect(url_for('home'))
 
     if request.method == 'POST':
         game = request.form.get('game')
